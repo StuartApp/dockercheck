@@ -5,6 +5,10 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='dockercheck',
+    install_requires=[
+        'CherryPy',
+        'docker',
+        'prometheus-client'],
     version='0.1',
     scripts=['dockercheck'] ,
     author="Davide Ferrari",
