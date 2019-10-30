@@ -23,7 +23,7 @@ DOCKER_LABEL = os.environ.get("DOCKERCHECK_LABEL","com.docker.compose.project")
 METRIC_NAME  = os.environ.get("DOCKERCHECK_PROM_METRIC",'container_status')
 
 prom_container_status = Enum(METRIC_NAME, 'Returns the status of a Compose project container',
-        states=['restarting', 'running', 'paused', 'exited'], labelnames=["name", "role"])
+        states=['restarting', 'running', 'paused', 'exited', 'unhealthy'], labelnames=["name", "role"])
 
 
 
@@ -44,7 +44,9 @@ def check_containers_status(client, filter_label):
         if container.status != "running":
             http_status=500
         try:
-            if container.attrs["State"]["Health"]["Status"] != "healthy":
+            if container.attrs["State"]["Health"]["Status"] == "unhealthy":
+                # health can be "starting", "healthy" and "unhealthy". we care just about the latter
+                prom_container_status.labels(container.name,container.labels[filter_label]).state("unhealthy")
                 http_status=500
         except KeyError:
             pass
