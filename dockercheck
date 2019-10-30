@@ -44,7 +44,7 @@ def check_containers_status(client, filter_label):
         if container.status != "running":
             http_status=500
         try:
-            if container.attrs["State"]["Health"]["Status"] == "healthy":
+            if container.attrs["State"]["Health"]["Status"] != "healthy":
                 http_status=500
         except KeyError:
             pass
