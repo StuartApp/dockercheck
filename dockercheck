@@ -40,7 +40,7 @@ def check_containers_status(client, filter_label):
 
     http_status=200
     for container in containers:
-        prom_container_status.labels(container.name,container.labels[DOCKER_LABEL]).state(container.status)
+        prom_container_status.labels(container.name,container.labels[filter_label]).state(container.status)
         if container.status != "running":
             http_status=500
         try:
@@ -65,6 +65,6 @@ class HealthCheck(object):
 
 if __name__ == '__main__':
     start_http_server(PROM_LISTEN_PORT) # prometheus
-    cherrypy.config.update({'server.socket_port': LISTEN_PORT})
-    cherrypy.config.update({'server.socket_host': '0.0.0.0'})
+    cherrypy.config.update({'server.socket_port': LISTEN_PORT,
+                            'server.socket_host': '0.0.0.0'})
     cherrypy.quickstart(HealthCheck(),'/')
