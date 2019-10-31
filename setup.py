@@ -9,7 +9,7 @@ setuptools.setup(
         'CherryPy',
         'docker',
         'prometheus-client'],
-    version='0.1',
+    version='0.2',
     scripts=['dockercheck'] ,
     author="Davide Ferrari",
     author_email="d.ferrari@stuart.com",
