@@ -9,7 +9,7 @@ At the same time, `dockercheck` exposes a Prometheus clients with the statuses o
 * container `name`
 * container `role`
 
- using a different TCP port and on the `/` path. The metrics get updated everytime the `/health` endpoint is accessed (sorry, no dedicated updating thread atm `¯\_(ツ)_/¯`).
+ on the `/metrics` path. The metrics get updated everytime the `/health` endpoint is accessed (sorry, no dedicated updating thread atm `¯\_(ツ)_/¯`).
 
 ## Configuration parameters
 
@@ -18,7 +18,6 @@ The program is customizable via environment variables
 |ENV VAR |Default value |Meaning|
 |-|-|-|
 |DOCKERCHECK_HTTP_PORT|8080|Port used for the healthcheck status|
-|DOCKERCHECK_PROM_HTTP_PORT|9150|Port used for the Prometheus client|
 |DOCKERCHECK_LABEL|"com.docker.compose.project"|Label used to filter containers. It can be just a label name or label=value|
 |DOCKERCHECK_PROM_METRIC|"container_status"|The name of the metric exposed by the Prometheus client|
 

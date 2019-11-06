@@ -5,7 +5,7 @@ import logging
 import threading
 import cherrypy
 import docker
-from prometheus_client import start_http_server, Enum
+from prometheus_client import generate_latest, Enum
 
 try:
     LISTEN_PORT = int(os.environ.get("DOCKERCHECK_HTTP_PORT","8080"))
@@ -13,19 +13,11 @@ except:
     logging.error("DOCKERCHECK_HTTP_PORT must be an integer value")
     exit(2)
 
-try:
-    PROM_LISTEN_PORT = int(os.environ.get("DOCKERCHECK_PROM_HTTP_PORT","9150"))
-except:
-    logging.error("DOCKERCHECK_PROM_HTTP_PORT must be an integer value")
-    exit(2)
-
 DOCKER_LABEL = os.environ.get("DOCKERCHECK_LABEL","com.docker.compose.project")
 METRIC_NAME  = os.environ.get("DOCKERCHECK_PROM_METRIC",'container_status')
 
 prom_container_status = Enum(METRIC_NAME, 'Returns the status of a Compose project container',
         states=['restarting', 'running', 'paused', 'exited', 'unhealthy'], labelnames=["name", "role"])
-
-
 
 def check_containers_status(client, filter_label):
     '''
@@ -52,7 +44,6 @@ def check_containers_status(client, filter_label):
             pass
     return(http_status)
 
-
 class HealthCheck(object):
     @cherrypy.expose
     def health(self):
@@ -65,8 +56,11 @@ class HealthCheck(object):
         cherrypy.response.status = check_containers_status(client, DOCKER_LABEL)
         client.close()
 
+    @cherrypy.expose
+    def metrics(self):
+        return generate_latest()
+
 if __name__ == '__main__':
-    start_http_server(PROM_LISTEN_PORT) # prometheus
     cherrypy.config.update({'server.socket_port': LISTEN_PORT,
                             'server.socket_host': '0.0.0.0'})
     cherrypy.quickstart(HealthCheck(),'/')
