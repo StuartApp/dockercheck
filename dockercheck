@@ -26,7 +26,7 @@ prom_container_status = Enum(
 )
 
 
-def check_disk_usage(threshold):
+def check_disk_full(threshold):
     """
     Checks the disk usage and returns True if it's below the specified threshold,
     otherwise returns False.
@@ -35,11 +35,11 @@ def check_disk_usage(threshold):
         disk_usage_percent = psutil.disk_usage("/").percent
         if disk_usage_percent > threshold:
             logging.error(f"Disk usage is over {threshold}%: {disk_usage_percent}%")
-            return False
+            return True
     except Exception as e:
         logging.error(f"Error checking disk usage: {e}")
         return False
-    return True
+    return False
 
 
 def check_containers_status(client, filter_label, disk_usage_threshold):
@@ -73,7 +73,7 @@ def check_containers_status(client, filter_label, disk_usage_threshold):
         except KeyError:
             pass
     # Check disk usage
-    if not check_disk_usage(disk_usage_threshold):
+    if check_disk_full(disk_usage_threshold):
         http_status = 500
     return http_status
 
