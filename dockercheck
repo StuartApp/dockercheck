@@ -16,6 +16,7 @@ except:
 
 DOCKER_LABEL = os.environ.get("DOCKERCHECK_LABEL", "com.docker.compose.project")
 METRIC_NAME = os.environ.get("DOCKERCHECK_PROM_METRIC", "container_status")
+DISK_USAGE_THRESHOLD = int(os.environ.get("DOCKERCHECK_DISK_USAGE_THRESHOLD", "90"))
 
 prom_container_status = Enum(
     METRIC_NAME,
@@ -25,14 +26,30 @@ prom_container_status = Enum(
 )
 
 
-def check_containers_status(client, filter_label):
+def check_disk_usage(threshold):
+    """
+    Checks the disk usage and returns True if it's below the specified threshold,
+    otherwise returns False.
+    """
+    try:
+        disk_usage_percent = psutil.disk_usage("/").percent
+        if disk_usage_percent > threshold:
+            logging.error(f"Disk usage is over {threshold}%: {disk_usage_percent}%")
+            return False
+    except Exception as e:
+        logging.error(f"Error checking disk usage: {e}")
+        return False
+    return True
+
+
+def check_containers_status(client, filter_label, disk_usage_threshold):
     """
     Check the containers statuses and disk usage and export metrics
 
     Iterates over a list of containers in *any* state and filtering on `filter_label`
     Updates Prometheus metrics for each container and logs disk usage errors.
 
-    It returns HTTP status code (200) if all containers are running and disk usage is below 90%.
+    It returns HTTP status code (200) if all containers are running and disk usage is below threshold.
 
     """
     containers = client.containers.list(all=True, filters={"label": filter_label})
@@ -55,13 +72,9 @@ def check_containers_status(client, filter_label):
                 http_status = 500
         except KeyError:
             pass
-    disk_usage_percent = psutil.disk_usage("/").percent
-    if disk_usage_percent > 90:
+    # Check disk usage
+    if not check_disk_usage(disk_usage_threshold):
         http_status = 500
-        prom_container_status.labels(
-            container.name, container.labels[filter_label]
-        ).state("unhealthy")
-        logging.error(f"Disk usage is over 90%: {disk_usage_percent}%")
     return http_status
 
 
@@ -79,7 +92,9 @@ class HealthCheck(object):
             cherrypy.log.error(msg="Cannot connect to docker daemon")
             cherrypy.response.status = 500
             return
-        cherrypy.response.status = check_containers_status(client, DOCKER_LABEL)
+        cherrypy.response.status = check_containers_status(
+            client, DOCKER_LABEL, DISK_USAGE_THRESHOLD
+        )
         client.close()
 
     @cherrypy.expose

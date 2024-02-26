@@ -4,13 +4,10 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name='dockercheck',
-    install_requires=[
-        'CherryPy',
-        'docker',
-        'prometheus-client'],
-    version='0.3',
-    scripts=['dockercheck'] ,
+    name="dockercheck",
+    install_requires=["CherryPy", "docker", "prometheus-client", "psutil"],
+    version="0.3",
+    scripts=["dockercheck"],
     author="Davide Ferrari",
     author_email="d.ferrari@stuart.com",
     description="Check and expose containers health",
@@ -23,4 +20,4 @@ setuptools.setup(
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
     ],
- )
+)
