@@ -1,0 +1,27 @@
+---
+name: common-dependencies
+description: Set up common workflow dependencies
+inputs:
+  NODEJS_VERSION:
+    description: Required Workflow Node JS version
+    required: false
+  PYTHON_VERSION:
+    description: Required Workflow Python version
+    required: false
+  GO_VERSION:
+    description: Required Workflow GO version
+    required: false
+runs:
+  using: composite
+  steps:
+    - if: ${{ inputs.NODEJS_VERSION != '' }}
+      name: Setup NodeJS ${{ inputs.NODEJS_VERSION }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ inputs.NODEJS_VERSION }}
+
+    - if: ${{ inputs.PYTHON_VERSION != '' }}
+      name: Setup Python ${{ inputs.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.PYTHON_VERSION }}

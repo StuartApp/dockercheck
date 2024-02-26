@@ -1,0 +1,45 @@
+---
+name: Semantic Release
+
+on:  # yamllint disable-line rule:truthy
+  push:
+    branches:
+      - master
+env:
+  NODEJS_VERSION: 16
+
+jobs:
+  semantic-release:
+    name: Create and Publish Semantic Release
+    runs-on: self-hosted
+    outputs:
+      publish: ${{ steps.semantic-release.outputs.new_release_published }}
+      version: ${{ steps.semantic-release.outputs.new_release_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/common-dependencies
+        with:
+          NODEJS_VERSION: ${{ env.NODEJS_VERSION }}
+
+      - name: Semantic Release
+        id: semantic-release
+        uses: cycjimmy/semantic-release-action@v3
+        with:
+          semantic_version: 19.0.5
+          extra_plugins: |
+            @semantic-release/git@10.0.1
+            @semantic-release/changelog@6.0.1
+            conventional-changelog-conventionalcommits@4.6.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_COMMITTER_NAME: ${{ vars.GH_BOT_NAME }}
+          GIT_AUTHOR_NAME: ${{ vars.GH_BOT_NAME }}
+          GIT_COMMITTER_EMAIL: ${{ vars.GH_BOT_EMAIL }}
+          GIT_AUTHOR_EMAIL: ${{ vars.GH_BOT_EMAIL }}
+
+      - name: Print new version
+        run: echo ${{ steps.semantic-release.outputs.new_release_version }}

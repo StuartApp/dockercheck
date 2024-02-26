@@ -1,0 +1,38 @@
+---
+name: Validate PR title
+
+on:  # yamllint disable-line rule:truthy
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+
+jobs:
+  pr-title:
+    name: Validate PR title
+    runs-on: self-hosted
+    steps:
+      - name: Retrieve GitHub event payload
+        run: echo $GH_EVENT_PAYLOAD
+        env:
+          GH_EVENT_PAYLOAD: ${{ toJSON(github.event) }}
+      - uses: amannn/action-semantic-pull-request@v5.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            fix
+            feat
+            docs
+            ci
+            chore
+          requireScope: false
+          subjectPattern: ^([A-Z]{2,}[0-9]{0,1}-[0-9]+).*$
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            didn't match the configured pattern. Please ensure that the subject
+            starts with its associated Jira issue id.
+          wip: true
+          validateSingleCommit: false
