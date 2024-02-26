@@ -20,6 +20,7 @@ The program is customizable via environment variables
 |DOCKERCHECK_HTTP_PORT|8080|Port used for the healthcheck status|
 |DOCKERCHECK_LABEL|"com.docker.compose.project"|Label used to filter containers. It can be just a label name or label=value|
 |DOCKERCHECK_PROM_METRIC|"container_status"|The name of the metric exposed by the Prometheus client|
+|DISK_USAGE_THRESHOLD|90|The threshold for the disk usage|
 
 ## Health calculation logic
 
