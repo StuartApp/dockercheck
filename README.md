@@ -23,4 +23,4 @@ The program is customizable via environment variables
 
 ## Health calculation logic
 
-![Diagram showing the health calculation logic](dockercheck-logic.png)
+![Diagram showing the health calculation logic](dockercheck.png)

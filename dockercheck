@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import os
+import psutil
 import logging
 import threading
 import cherrypy
@@ -8,45 +9,70 @@ import docker
 from prometheus_client import generate_latest, Enum
 
 try:
-    LISTEN_PORT = int(os.environ.get("DOCKERCHECK_HTTP_PORT","8080"))
+    LISTEN_PORT = int(os.environ.get("DOCKERCHECK_HTTP_PORT", "8080"))
 except:
     logging.error("DOCKERCHECK_HTTP_PORT must be an integer value")
     exit(2)
 
-DOCKER_LABEL = os.environ.get("DOCKERCHECK_LABEL","com.docker.compose.project")
-METRIC_NAME  = os.environ.get("DOCKERCHECK_PROM_METRIC",'container_status')
+DOCKER_LABEL = os.environ.get("DOCKERCHECK_LABEL", "com.docker.compose.project")
+METRIC_NAME = os.environ.get("DOCKERCHECK_PROM_METRIC", "container_status")
 
-prom_container_status = Enum(METRIC_NAME, 'Returns the status of a Compose project container',
-        states=['restarting', 'running', 'paused', 'exited', 'unhealthy'], labelnames=["name", "role"])
+prom_container_status = Enum(
+    METRIC_NAME,
+    "Returns the status of a Compose project container",
+    states=["restarting", "running", "paused", "exited", "unhealthy"],
+    labelnames=["name", "role"],
+)
+
 
 def check_containers_status(client, filter_label):
-    '''
-    Check the containers statuses and export metrics
+    """
+    Check the containers statuses and disk usage and export metrics
 
     Iterates over a list of containers in *any* state and filtering on `filter_label`
-    '''
-    containers = client.containers.list(all=True,
-                                        filters={"label": filter_label})
-    if not containers:
-        return(500)
+    Updates Prometheus metrics for each container and logs disk usage errors.
 
-    http_status=200
+    It returns HTTP status code (200) if all containers are running and disk usage is below 90%.
+
+    """
+    containers = client.containers.list(all=True, filters={"label": filter_label})
+    if not containers:
+        return 500
+
+    http_status = 200
     for container in containers:
-        prom_container_status.labels(container.name,container.labels[filter_label]).state(container.status)
+        prom_container_status.labels(
+            container.name, container.labels[filter_label]
+        ).state(container.status)
         if container.status != "running":
-            http_status=500
+            http_status = 500
         try:
             if container.attrs["State"]["Health"]["Status"] == "unhealthy":
                 # health can be "starting", "healthy" and "unhealthy". we care just about the latter
-                prom_container_status.labels(container.name,container.labels[filter_label]).state("unhealthy")
-                http_status=500
+                prom_container_status.labels(
+                    container.name, container.labels[filter_label]
+                ).state("unhealthy")
+                http_status = 500
         except KeyError:
             pass
-    return(http_status)
+    disk_usage_percent = psutil.disk_usage("/").percent
+    if disk_usage_percent > 90:
+        http_status = 500
+        prom_container_status.labels(
+            container.name, container.labels[filter_label]
+        ).state("unhealthy")
+        logging.error(f"Disk usage is over 90%: {disk_usage_percent}%")
+    return http_status
+
 
 class HealthCheck(object):
     @cherrypy.expose
     def health(self):
+        """
+        Exposes the /health endpoint to check the status of the containers
+        and the disk usage.
+
+        """
         try:
             client = docker.from_env()
         except:
@@ -58,9 +84,15 @@ class HealthCheck(object):
 
     @cherrypy.expose
     def metrics(self):
+        """
+        Exposes the /metrics endpoint to return the Prometheus metrics
+        """
         return generate_latest()
 
-if __name__ == '__main__':
-    cherrypy.config.update({'server.socket_port': LISTEN_PORT,
-                            'server.socket_host': '0.0.0.0'})
-    cherrypy.quickstart(HealthCheck(),'/')
+
+if __name__ == "__main__":
+    # configure and start the cherrypy server
+    cherrypy.config.update(
+        {"server.socket_port": LISTEN_PORT, "server.socket_host": "0.0.0.0"}
+    )
+    cherrypy.quickstart(HealthCheck(), "/")
