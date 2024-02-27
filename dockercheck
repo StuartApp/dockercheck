@@ -16,7 +16,8 @@ except:
 
 DOCKER_LABEL = os.environ.get("DOCKERCHECK_LABEL", "com.docker.compose.project")
 METRIC_NAME = os.environ.get("DOCKERCHECK_PROM_METRIC", "container_status")
-DISK_USAGE_THRESHOLD = int(os.environ.get("DOCKERCHECK_DISK_USAGE_THRESHOLD", "90"))
+# Default disk usage threshold set to -1
+DISK_USAGE_THRESHOLD = int(os.environ.get("DOCKERCHECK_DISK_USAGE_THRESHOLD", "-1"))
 
 prom_container_status = Enum(
     METRIC_NAME,
@@ -31,6 +32,8 @@ def check_disk_full(threshold):
     Checks the disk usage and returns True if it's below the specified threshold,
     otherwise returns False.
     """
+    if threshold < 0:
+        return False
     try:
         disk_usage_percent = psutil.disk_usage("/").percent
         if disk_usage_percent > threshold:
