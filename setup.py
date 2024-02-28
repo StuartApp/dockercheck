@@ -1,12 +1,12 @@
-import setuptools
+from setuptools import setup
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-setuptools.setup(
+setup(
     name="dockercheck",
     install_requires=["CherryPy", "docker", "prometheus-client", "psutil"],
-    version="0.3",
+    version="0.4",
     scripts=["dockercheck"],
     author="Davide Ferrari",
     author_email="d.ferrari@stuart.com",
