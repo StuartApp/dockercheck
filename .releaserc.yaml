@@ -1,0 +1,25 @@
+---
+branches:
+  - master
+ci: false
+plugins:
+  - - "@semantic-release/commit-analyzer"
+    - preset: conventionalcommits
+  - - "@semantic-release/release-notes-generator"
+    - preset: conventionalcommits
+  - - "@semantic-release/github"
+    - successComment: >-
+        'This PR is included in version ${nextRelease.version} :rocket:'
+      labels: false
+      releasedLabels: false
+  - - "@semantic-release/changelog"
+    - changelogFile: CHANGELOG.md
+      changelogTitle: |-
+        # [CHANGELOG](https://keepachangelog.com/en/1.0.0/)
+  - - "@semantic-release/git"
+    - assets:
+        - CHANGELOG.md
+      message: |-
+        chore(release): version ${nextRelease.version} [skip ci]
+
+        ${nextRelease.notes}
